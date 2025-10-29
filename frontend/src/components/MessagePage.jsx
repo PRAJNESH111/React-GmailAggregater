@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api";
+import axios, { API_BASE_URL } from "../api";
 
 const MessagePage = ({ route, onClose }) => {
   const [message, setMessage] = useState(null);
@@ -80,7 +80,7 @@ const MessagePage = ({ route, onClose }) => {
             className="btn btn-sm btn-primary"
             onClick={() => {
               // Force re-auth flow
-              window.location.href = `http://localhost:5000/auth/google?force=true`;
+              window.location.href = `${API_BASE_URL}/auth/google?force=true`;
             }}
           >
             Re-authenticate

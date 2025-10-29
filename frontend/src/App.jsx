@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import axios from "./api";
+import axios, { API_BASE_URL } from "./api";
 import UserSidebar from "./components/UserSidebar";
 import MailTable from "./components/MailTable";
 import MessagePage from "./components/MessagePage";
@@ -96,7 +96,7 @@ function App() {
         );
         if (doReauth) {
           // open auth flow and hint the user's email so Google can pre-select account
-          const url = `http://localhost:5000/auth/google?force=true&login_hint=${encodeURIComponent(
+          const url = `${API_BASE_URL}/auth/google?force=true&login_hint=${encodeURIComponent(
             user.email || ""
           )}`;
           window.location.href = url;
@@ -128,7 +128,7 @@ function App() {
   };
 
   const onSignIn = () => {
-    window.location.href = "http://localhost:5000/auth/google";
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
   return (
