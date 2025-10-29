@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import dotenv from "dotenv";
 dotenv.config();
 
-const DATA_FILE = path.join(process.cwd(), "backend", "users.json");
+const DATA_FILE = path.join(process.cwd(), "users.json");
 
 async function readUsersFile() {
   try {
