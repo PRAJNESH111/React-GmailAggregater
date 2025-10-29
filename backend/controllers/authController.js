@@ -1,7 +1,8 @@
 import fs from "fs/promises";
 import path from "path";
-import { google } from "googleapis";
 import dotenv from "dotenv";
+import { createOAuthClient } from "../config/googleClient.js";
+import { google } from "googleapis";
 dotenv.config();
 
 const DATA_FILE = path.join(process.cwd(), "users.json");
@@ -24,11 +25,7 @@ async function writeUsersFile(users) {
 export async function saveUser(accessToken) {
   try {
     // Create an OAuth2 client with configured client id/secret so Google APIs accept the request
-    const client = new google.auth.OAuth2(
-      process.env.GOOGLE_CLIENT_ID,
-      process.env.GOOGLE_CLIENT_SECRET,
-      process.env.REDIRECT_URI
-    );
+    const client = createOAuthClient();
     client.setCredentials({ access_token: accessToken });
     const oauth2 = google.oauth2({ auth: client, version: "v2" });
     const resp = await oauth2.userinfo.get();

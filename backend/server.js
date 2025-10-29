@@ -6,6 +6,8 @@ import gmailRoutes from "./routes/gmail.js";
 
 dotenv.config();
 const app = express();
+// Trust first proxy so req.protocol / req.get('host') reflect real client when hosted (Render)
+app.set("trust proxy", 1);
 app.use(cors({ origin: process.env.FRONTEND_URL }));
 app.use(express.json());
 

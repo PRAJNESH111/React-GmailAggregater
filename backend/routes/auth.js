@@ -1,11 +1,12 @@
 import express from "express";
-import { oauth2Client } from "../config/googleClient.js";
+import { createOAuthClient, getRedirectUri } from "../config/googleClient.js";
 import { saveUser, listUsers } from "../controllers/authController.js";
 import { deleteUserById } from "../controllers/authController.js";
 
 const router = express.Router();
 
 router.get("/google", (req, res) => {
+  const oauth2Client = createOAuthClient(req);
   const scopes = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "profile",
@@ -16,6 +17,7 @@ router.get("/google", (req, res) => {
     access_type: "offline",
     scope: scopes,
     include_granted_scopes: true,
+    redirect_uri: getRedirectUri(req),
   };
   if (req.query.force === "true") opts.prompt = "consent";
   if (req.query.login_hint) opts.login_hint = req.query.login_hint;
@@ -26,7 +28,12 @@ router.get("/google", (req, res) => {
 
 router.get("/callback", async (req, res) => {
   const code = req.query.code;
-  const { tokens } = await oauth2Client.getToken(code);
+  const oauth2Client = createOAuthClient(req);
+  const redirectUri = getRedirectUri(req);
+  const { tokens } = await oauth2Client.getToken({
+    code,
+    redirect_uri: redirectUri,
+  });
   oauth2Client.setCredentials(tokens);
   // Redirect to frontend with the access token. Frontend will send it to backend to save the user.
   res.redirect(`${process.env.FRONTEND_URL}?token=${tokens.access_token}`);
