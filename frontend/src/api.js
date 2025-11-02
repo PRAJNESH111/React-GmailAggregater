@@ -16,6 +16,7 @@ if (import.meta.env.DEV) {
 
 const API = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 export { API_BASE_URL };

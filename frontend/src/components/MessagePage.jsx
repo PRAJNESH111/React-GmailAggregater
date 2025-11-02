@@ -8,16 +8,15 @@ const MessagePage = ({ route, onClose }) => {
   const [isAuthProblem, setIsAuthProblem] = useState(false);
 
   useEffect(() => {
-    // If the navigation included an email object in history.state, use it directly
-    const stateEmail = window.history.state?.email;
+    // Use any email from history state for instant render, but still fetch full body.
+    const stateEmail = globalThis.history.state?.email;
     if (stateEmail) {
       setMessage(stateEmail);
-      setLoading(false);
       setError(null);
-      return;
     }
+
     const params = new URLSearchParams(
-      (route && route.split("?")[1]) || window.location.search
+      (route && route.split("?")[1]) || globalThis.location.search
     );
     const userId = params.get("userId");
     const id = params.get("id");
@@ -55,15 +54,16 @@ const MessagePage = ({ route, onClose }) => {
       }
     };
 
+    // Always fetch full message to avoid showing only a snippet
     fetchMessage();
   }, [route]);
 
   return (
-    <div className="card p-3" style={{ height: "100%" }}>
-      <div className="d-flex justify-content-between mb-3">
+    <div className="card-glass p-3 h-full flex flex-col overflow-hidden">
+      <div className="d-flex justify-content-between mb-3 shrink-0">
         <div>
           <button
-            className="btn btn-sm btn-outline-secondary me-2"
+            className="inline-flex items-center rounded-md border border-white/20 px-3 py-1.5 text-sm hover:bg-white/10 transition"
             onClick={onClose}
           >
             Back
@@ -77,25 +77,25 @@ const MessagePage = ({ route, onClose }) => {
       {isAuthProblem && (
         <div className="mt-2">
           <button
-            className="btn btn-sm btn-primary"
+            className="inline-flex items-center rounded-md bg-brand-600 hover:bg-brand-500 text-white px-3 py-1.5 text-sm transition"
             onClick={() => {
               // Force re-auth flow
-              window.location.href = `${API_BASE_URL}/auth/google?force=true`;
+              globalThis.location.href = `${API_BASE_URL}/auth/google?force=true`;
             }}
           >
             Re-authenticate
           </button>
         </div>
       )}
-
       {message && (
-        <div>
-          <h5>{message.subject}</h5>
-          <div className="text-muted small mb-2">
+        <div className="flex-1 min-h-0 overflow-auto">
+          <h5 className="mb-2">{message.subject}</h5>
+          <div className="text-muted small mb-3">
             From: {message.from} — {message.date}
           </div>
           <div
             className="message-body"
+            style={{ color: "var(--fg)", wordBreak: "break-word" }}
             dangerouslySetInnerHTML={{
               __html: message.body || message.snippet,
             }}

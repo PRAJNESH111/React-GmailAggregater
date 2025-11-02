@@ -1,68 +1,250 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Theme variables and global styles */
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --bg: #f9fafb; /* light background */
+  --fg: #111827; /* light text */
+  --bg-grad1: #e5e7eb; /* light gradient */
+  --bg-grad2: #dbeafe; /* light gradient */
+  /* skeleton shimmer (light) */
+  --sk-bg: #e5e7eb; /* gray-200 */
+  --sk-shine: #f3f4f6; /* gray-100 */
+}
+.dark {
+  --bg: #0b1020; /* dark background */
+  --fg: #e5e7eb; /* dark text */
+  --bg-grad1: #1f2937; /* dark gradient */
+  --bg-grad2: #0f172a; /* dark gradient */
+  /* skeleton shimmer (dark) */
+  --sk-bg: rgba(255, 255, 255, 0.08);
+  --sk-shine: rgba(255, 255, 255, 0.18);
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+html,
+body,
+#root {
+  height: 100%;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  background: radial-gradient(
+      1200px 800px at 80% -20%,
+      var(--bg-grad1) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      800px 600px at -10% 30%,
+      var(--bg-grad2) 0%,
+      transparent 60%
+    ),
+    var(--bg);
+  color: var(--fg);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Dark mode input autofill fix to avoid bright white background */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--fg);
+  transition: background-color 5000s ease-in-out 0s;
+  -webkit-box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.06) inset;
+  box-shadow: 0 0 0px 1000px rgba(255, 255, 255, 0.06) inset;
 }
 
-button {
+/* Improve default text contrast in dark mode */
+.text-muted {
+  color: #6b7280;
+}
+.dark .text-muted {
+  color: #9ca3af;
+}
+
+/* Bootstrap form control theming to respect dark mode */
+.form-control {
+  background-color: rgba(255, 255, 255, 0.7);
+  color: var(--fg);
+  border-color: rgba(17, 24, 39, 0.15);
+}
+.form-control::placeholder {
+  color: #6b7280;
+}
+.dark .form-control {
+  background-color: rgba(255, 255, 255, 0.06);
+  color: var(--fg);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+.dark .form-control::placeholder {
+  color: #94a3b8;
+}
+
+.card-glass {
+  @apply backdrop-blur rounded-xl border shadow-lg bg-white/70 border-black/10 dark:bg-white/5 dark:border-white/10;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium;
+}
+.badge-warning {
+  @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-300/20 dark:text-yellow-200;
+}
+.badge-muted {
+  @apply bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-300;
+}
+
+/* Sidebar user card tweaks */
+.sidebar .user-item-left .user-avatar-img {
   border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+/* Mail table theming overrides (Bootstrap-neutral) */
+.mail-table {
+  /* Override Bootstrap table variables to work with dark mode */
+  --bs-table-bg: transparent;
+  --bs-table-color: var(--fg);
+  --bs-table-accent-bg: transparent;
+  --bs-table-striped-bg: rgba(17, 24, 39, 0.04);
+  --bs-table-striped-color: var(--fg);
+  --bs-table-hover-bg: rgba(17, 24, 39, 0.06);
+  --bs-table-hover-color: var(--fg);
+  background: transparent !important;
+  color: var(--fg) !important;
+}
+.mail-table thead th,
+.mail-table tbody td,
+.mail-table tbody tr {
+  background: transparent !important;
+  color: inherit !important;
+}
+.mail-table td,
+.mail-table th {
+  border-color: rgba(17, 24, 39, 0.08);
+}
+.mail-header th {
+  border-color: rgba(17, 24, 39, 0.08);
+}
+.dark .mail-header th {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.mail-row {
+  border-color: rgba(17, 24, 39, 0.06);
+}
+.dark .mail-row {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+.dark .mail-table {
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.04);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-color: #ffffff;
+  color: #ffffff !important;
+}
+.dark .mail-table td,
+.dark .mail-table th {
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.dark .mail-table .text-muted {
+  color: #ffffffcc;
+}
+
+/* Ensure date/time in card view is white in dark mode */
+.dark .mail-list .mail-date {
+  color: #ffffff !important;
+}
+.mail-row.unread .mail-subject {
+  font-weight: 600;
+}
+.mail-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--fg);
+  font-size: 12px;
+  margin-right: 8px;
+}
+.star-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg);
+}
+.star-btn.starred {
+  color: #f59e0b; /* amber-500 */
+}
+
+/* Animated brand logo text */
+.logo-animated {
+  background: linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6, #60a5fa);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: logo-shimmer 6s linear infinite;
+  letter-spacing: 0.5px;
+}
+
+@keyframes logo-shimmer {
+  0% {
+    background-position: 0% 50%;
   }
-  a:hover {
-    color: #747bff;
+  100% {
+    background-position: 200% 50%;
   }
-  button {
-    background-color: #f9f9f9;
+}
+
+/* Skeleton shimmer utility */
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    90deg,
+    var(--sk-bg) 0%,
+    var(--sk-shine) 50%,
+    var(--sk-bg) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-move 1.4s linear infinite;
+}
+
+/* Message body content should fit container */
+.message-body {
+  word-break: break-word;
+}
+.message-body img {
+  max-width: 100%;
+  height: auto;
+}
+.message-body table {
+  width: 100% !important;
+  overflow: auto;
+  display: block;
+}
+.message-body pre,
+.message-body code {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.skeleton-card {
+  height: 64px; /* consistent full-height card skeleton */
+}
+
+@keyframes skeleton-move {
+  0% {
+    background-position: -200% 0;
   }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Basic element defaults without Vite template overrides */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }

@@ -2,24 +2,60 @@ import express from "express";
 import { google } from "googleapis";
 import dotenv from "dotenv";
 dotenv.config();
-import { getUserTokenById } from "../controllers/authController.js";
+import AppUser from "../models/AppUser.js";
+import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
+// Heuristic: classify if a message looks recruitment-related
+function isRecruiterLike(from = "", subject = "", snippet = "") {
+  const text = `${from} ${subject} ${snippet}`.toLowerCase();
+  const keywords = [
+    "recruiter",
+    "talent acquisition",
+    "hiring",
+    "opportunity",
+    "opening",
+    "job",
+    "career",
+    "interview",
+  ];
+  const domains = [
+    "@indeed.com",
+    "@linkedin.com",
+    "@naukri.com",
+    "@monster.com",
+    "@glassdoor.com",
+    "@ziprecruiter.com",
+  ];
+  if (keywords.some((k) => text.includes(k))) return true;
+  const fromLower = String(from).toLowerCase();
+  if (domains.some((d) => fromLower.includes(d))) return true;
+  return false;
+}
+
 // GET /gmail/emails?userId=<id>
-router.get("/emails", async (req, res) => {
+router.get("/emails", requireAuth, async (req, res) => {
   try {
     const userId = req.query.userId;
+    const includeReplyCounts =
+      String(req.query.includeReplyCounts || "false").toLowerCase() === "true";
     let token = null;
-
     if (userId) {
-      token = await getUserTokenById(userId);
+      const user = await AppUser.findById(req.user.id, {
+        connectedAccounts: 1,
+      }).lean();
+      const acc = (user?.connectedAccounts || []).find(
+        (a) =>
+          String(a.googleId) === String(userId) ||
+          String(a.email) === String(userId)
+      );
+      token = acc?.accessToken || null;
     }
-
-    // fallback to Authorization header for backward compatibility
-    if (!token) token = req.headers.authorization?.split(" ")[1];
     if (!token)
-      return res.status(400).json({ error: "No token or userId provided" });
+      return res
+        .status(400)
+        .json({ error: "No account token found for this user" });
 
     // create a fresh client for this request with app credentials
     const client = new google.auth.OAuth2(
@@ -43,14 +79,45 @@ router.get("/emails", async (req, res) => {
         const msgData = await gmail.users.messages.get({
           userId: "me",
           id: msg.id,
+          format: "metadata",
+          metadataHeaders: ["From", "Subject", "Date"],
         });
         const headers = msgData.data.payload.headers || [];
+        const from = headers.find((h) => h.name === "From")?.value || "";
+        const subject = headers.find((h) => h.name === "Subject")?.value || "";
+        const date = headers.find((h) => h.name === "Date")?.value || "";
+        const snippet = msgData.data.snippet || "";
+        const recruiter = isRecruiterLike(from, subject, snippet);
+
+        let replyCountRecruiter = undefined;
+        if (includeReplyCounts && msgData.data.threadId) {
+          try {
+            const thread = await gmail.users.threads.get({
+              userId: "me",
+              id: msgData.data.threadId,
+            });
+            const msgs = thread.data.messages || [];
+            replyCountRecruiter = msgs.reduce((acc, m) => {
+              const hs = m.payload?.headers || [];
+              const f = hs.find((h) => h.name === "From")?.value || "";
+              const s = hs.find((h) => h.name === "Subject")?.value || "";
+              const sn = m.snippet || "";
+              return acc + (isRecruiterLike(f, s, sn) ? 1 : 0);
+            }, 0);
+          } catch (e) {
+            replyCountRecruiter = 0;
+          }
+        }
+
         return {
           id: msg.id,
-          from: headers.find((h) => h.name === "From")?.value || "",
-          subject: headers.find((h) => h.name === "Subject")?.value || "",
-          date: headers.find((h) => h.name === "Date")?.value || "",
-          snippet: msgData.data.snippet || "",
+          threadId: msgData.data.threadId,
+          from,
+          subject,
+          date,
+          snippet,
+          isRecruiter: recruiter,
+          replyCountRecruiter,
         };
       })
     );
@@ -75,7 +142,7 @@ router.get("/emails", async (req, res) => {
 });
 
 // GET /gmail/auth
-router.get("/auth", async (req, res) => {
+router.get("/auth", requireAuth, async (req, res) => {
   const scopes = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "profile",
@@ -92,7 +159,7 @@ router.get("/auth", async (req, res) => {
 });
 
 // GET /gmail/callback
-router.get("/callback", async (req, res) => {
+router.get("/callback", requireAuth, async (req, res) => {
   const code = req.query.code;
   const { tokens } = await oauth2Client.getToken(code);
   // save tokens server-side (access_token, refresh_token, scope, expiry_date)
@@ -102,17 +169,28 @@ router.get("/callback", async (req, res) => {
 });
 
 // GET single message body: /gmail/message?userId=...&id=...
-router.get("/message", async (req, res) => {
+router.get("/message", requireAuth, async (req, res) => {
   try {
     const userId = req.query.userId;
     const id = req.query.id;
     if (!id) return res.status(400).json({ error: "message id required" });
 
     let token = null;
-    if (userId) token = await getUserTokenById(userId);
-    if (!token) token = req.headers.authorization?.split(" ")[1];
+    if (userId) {
+      const user = await AppUser.findById(req.user.id, {
+        connectedAccounts: 1,
+      }).lean();
+      const acc = (user?.connectedAccounts || []).find(
+        (a) =>
+          String(a.googleId) === String(userId) ||
+          String(a.email) === String(userId)
+      );
+      token = acc?.accessToken || null;
+    }
     if (!token)
-      return res.status(400).json({ error: "No token or userId provided" });
+      return res
+        .status(400)
+        .json({ error: "No account token found for this user" });
 
     const client = new google.auth.OAuth2(
       process.env.GOOGLE_CLIENT_ID,
