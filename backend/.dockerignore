@@ -1,0 +1,24 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Environment files
+.env
+.env.*
+
+# VCS
+.git
+.gitignore
+
+# OS / Editor
+.DS_Store
+*.swp
+
+# Build artifacts
+coverage
+logs
+*.log
+
+# Docker metadata
+Dockerfile
+.dockerignore

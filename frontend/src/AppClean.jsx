@@ -37,6 +37,7 @@ function AppClean() {
   const [filterNonRecruiterOnly, setFilterNonRecruiterOnly] = useState(false);
   const [filterRecruiterByKeywordsOnly, setFilterRecruiterByKeywordsOnly] =
     useState(false);
+  const [selectedKeyword, setSelectedKeyword] = useState("");
   const [showReplyCounts, setShowReplyCounts] = useState(false);
   const [loadingEmails, setLoadingEmails] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -181,6 +182,23 @@ function AppClean() {
     "@jobs",
   ];
 
+  // Dropdown keyword options provided by user
+  const keywordOptions = [
+    "interview",
+    "hiring",
+    "job opportunity",
+    "selected",
+    "shortlisted",
+    "offer letter",
+    "application",
+    "opportunity at",
+    "resume shortlisted",
+    "schedule a call",
+    "recruitment",
+    "profile matches",
+    "we are interested",
+  ];
+
   const isKeywordRecruiter = (email) => {
     if (!email) return false;
     const subject = String(email.subject || "").toLowerCase();
@@ -188,6 +206,19 @@ function AppClean() {
     const from = String(email.from || "").toLowerCase();
     return recruiterKeywords.some(
       (kw) => subject.includes(kw) || snippet.includes(kw) || from.includes(kw)
+    );
+  };
+
+  const matchesKeyword = (email, kw) => {
+    if (!email || !kw) return false;
+    const needle = kw.toLowerCase();
+    const subject = String(email.subject || "").toLowerCase();
+    const snippet = String(email.snippet || "").toLowerCase();
+    const from = String(email.from || "").toLowerCase();
+    return (
+      subject.includes(needle) ||
+      snippet.includes(needle) ||
+      from.includes(needle)
     );
   };
 
@@ -491,6 +522,29 @@ function AppClean() {
                     >
                       Recruiter by keywords
                     </label>
+                    {/* Keyword select (Tailwind styled) */}
+                    <select
+                      value={selectedKeyword}
+                      onChange={(e) => setSelectedKeyword(e.target.value)}
+                      disabled={!filterRecruiterByKeywordsOnly}
+                      className={`ml-2 rounded-md px-2 py-1 text-sm border outline-none 
+                        bg-white/5 text-slate-900 border-white/10 
+                        dark:bg-slate-800/50 dark:text-white dark:border-white/20 
+                        ${
+                          !filterRecruiterByKeywordsOnly
+                            ? "opacity-60 cursor-not-allowed"
+                            : ""
+                        }
+                      `}
+                      title="Choose a specific keyword to filter"
+                    >
+                      <option value="">All keywords</option>
+                      {keywordOptions.map((opt) => (
+                        <option key={opt} value={opt}>
+                          {opt}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="form-check ms-3 hidden md:block">
                     <input
@@ -531,8 +585,11 @@ function AppClean() {
               <div className="flex-1 min-h-0 overflow-auto">
                 <MailTable
                   emails={emails.filter((m) => {
-                    if (filterRecruiterByKeywordsOnly)
+                    if (filterRecruiterByKeywordsOnly) {
+                      if (selectedKeyword)
+                        return matchesKeyword(m, selectedKeyword);
                       return isKeywordRecruiter(m);
+                    }
                     if (filterRecruiterOnly) return m.isRecruiter;
                     if (filterNonRecruiterOnly)
                       return !m.isRecruiter && !isKeywordRecruiter(m);

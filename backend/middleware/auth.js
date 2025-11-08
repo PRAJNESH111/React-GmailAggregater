@@ -31,8 +31,8 @@ export const issueAuthCookie = (res, userId) => {
   const isProd = process.env.NODE_ENV === "production";
   res.cookie(COOKIE_NAME, token, {
     httpOnly: true,
-    sameSite: isProd ? "none" : "lax",
-    secure: isProd,
+    sameSite: "none", // ✅ allow cross-site (Vercel <-> microdegree.in)
+    secure: true, // ✅ required for HTTPS
     maxAge: 7 * 24 * 3600 * 1000,
     path: "/",
   });
